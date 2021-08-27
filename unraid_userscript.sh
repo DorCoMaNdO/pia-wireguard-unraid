@@ -35,7 +35,7 @@ if [ -d "$RUN_PATH/pia-scripts" ] ; then
   echo "Removing old scripts..."
   rm -rd pia-scripts
 fi
-git clone https://github.com/DorCoMaNdO/manual-connections.git pia-scripts
+git clone https://github.com/DorCoMaNdO/pia-wireguard-unraid.git pia-scripts
 
 cd pia-scripts
 

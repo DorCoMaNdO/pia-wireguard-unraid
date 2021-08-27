@@ -14,8 +14,8 @@ Alternatively manual setup is as explained in the next segment.
 This repository contains documentation on how to create native WireGuard connections, and also on how to enable Port Forwarding in case you require this feature. You will find a lot of information below. However if you prefer quick test, here is the __TL/DR__:
 
 ```
-git clone https://github.com/DorCoMaNdO/manual-connections.git
-cd manual-connections
+git clone https://github.com/DorCoMaNdO/pia-wireguard-unraid.git
+cd pia-wireguard-unraid
 sudo ./run_setup.sh
 ```
 
