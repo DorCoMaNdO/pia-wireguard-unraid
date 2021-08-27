@@ -23,14 +23,33 @@ PIA_PF=false        # NOT RECOMMENDED, true/false, requests a port-forwarding co
 
 
 ###### USERSCRIPT ######
+
 # Create run directory
 if [ ! -d "$RUN_PATH" ] ; then
-  mkdir -vp "$RUN_PATH" # make the directory as it doesnt exist
+  mkdir -vp "$RUN_PATH"
 fi
 
 # Clone scripts from github
 cd $RUN_PATH
-git clone https://github.com/DorCoMaNdO/manual-connections.git .
+if [ -d "$RUN_PATH/pia-scripts" ] ; then
+  echo "Removing old scripts..."
+  rm -rd pia-scripts
+fi
+git clone https://github.com/DorCoMaNdO/manual-connections.git pia-scripts
+
+cd pia-scripts
+
+# Make scripts executable
+find ./ -name "*.sh" | xargs chmod 744
 
 # Run setup script with our parameters
-sudo PIA_USER=$PIA_USER PIA_PASS=$PIA_PASS PIA_DNS=$PIA_DNS MAX_LATENCY=$MAX_LATENCY AUTOCONNECT=$AUTOCONNECT PREFERRED_REGION=$PREFERRED_REGION DISABLE_IPV6=$DISABLE_IPV6 CONNECT_VPN=$CONNECT_VPN TUNNEL_INDEX=$TUNNEL_INDEX PIA_PF=$PIA_PF ./run_setup.sh
+sudo PIA_USER=$PIA_USER \
+     PIA_PASS=$PIA_PASS \
+     PIA_DNS=$PIA_DNS \
+     MAX_LATENCY=$MAX_LATENCY \
+     AUTOCONNECT=$AUTOCONNECT \
+     PREFERRED_REGION=$PREFERRED_REGION \
+     DISABLE_IPV6=$DISABLE_IPV6 \
+     CONNECT_VPN=$CONNECT_VPN \
+     TUNNEL_INDEX=$TUNNEL_INDEX \
+     PIA_PF=$PIA_PF ./run_setup.sh
