@@ -106,14 +106,6 @@ if [ "$(echo "$wireguard_json" | jq -r '.status')" != "OK" ]; then
   exit 1
 fi
 
-# Multi-hop is out of the scope of this repo, but you should be able to
-# get multi-hop running with both WireGuard and OpenVPN by playing with
-# these scripts. Feel free to fork the project and test it out.
-echo
-echo Trying to disable a PIA WG connection in case it exists...
-wg-quick down pia && echo -e "${GREEN}\nPIA WG connection disabled!${NC}"
-echo
-
 # Create the WireGuard config based on the JSON received from the API
 # In case you want this section to also add the DNS setting, please
 # start the script with PIA_DNS=true.
@@ -128,20 +120,78 @@ if [ "$PIA_DNS" == true ]; then
   echo
   dnsSettingForVPN="DNS = $dnsServer"
 fi
-echo -n "Trying to write /etc/wireguard/pia.conf..."
+
+# Multi-hop is out of the scope of this repo, but you should be able to
+# get multi-hop running with both WireGuard and OpenVPN by playing with
+# these scripts. Feel free to fork the project and test it out.
+echo
+echo "Trying to disable a PIA WG connection in case it exists..."
+wg-quick down pia && echo -e "${GREEN}\nPIA WG connection disabled!${NC}"
+if [[ -n "$TUNNEL_INDEX" ]] && [[ "$TUNNEL_INDEX" =~ ^[0-9]+$ ]]; then
+  echo
+  echo "Trying to disable older WG connection in case it exists..."
+  wg-quick down wg${TUNNEL_INDEX} && echo -e "${GREEN}\nOlder WG connection disabled!${NC}" && CONNECT_VPN="true"
+fi
+echo
+
+# Create the config file with the wg#.conf naming for the config to be
+# picked up by the Dynamix WireGuard unRaid plugin.
+# if TUNNEL_INDEX is not provided, create a new tunnel with an
+# incremented index.
+if [[ -z "$TUNNEL_INDEX" ]] || ! [[ "$TUNNEL_INDEX" =~ ^[0-9]+$ ]]; then
+  TUNNEL_INDEX=$(ls /etc/wireguard/ | grep wg.*.c | grep -o '[0-9]*' | sort -nr | head -1)
+  if ! [[ "$TUNNEL_INDEX" =~ ^[0-9]+$ ]]; then
+    TUNNEL_INDEX=0
+  else
+    TUNNEL_INDEX=$(($TUNNEL_INDEX+1))
+  fi
+fi
+
+echo -n "Trying to write /etc/wireguard/wg$TUNNEL_INDEX.conf..."
 mkdir -p /etc/wireguard
 echo "
 [Interface]
+#Private Internet Access
 Address = $(echo "$wireguard_json" | jq -r '.peer_ip')
 PrivateKey = $privKey
 $dnsSettingForVPN
 [Peer]
+#$WG_HOSTNAME
 PersistentKeepalive = 25
 PublicKey = $(echo "$wireguard_json" | jq -r '.server_key')
 AllowedIPs = 0.0.0.0/0
 Endpoint = ${WG_SERVER_IP}:$(echo "$wireguard_json" | jq -r '.server_port')
-" > /etc/wireguard/pia.conf || exit 1
+" > /etc/wireguard/wg${TUNNEL_INDEX}.conf || exit 1
 echo -e ${GREEN}OK!${NC}
+
+echo -n "Trying to write /etc/wireguard/wg$TUNNEL_INDEX.cfg..."
+echo "
+PublicKey:0=\"$pubKey\"
+TYPE:1=\"7\"
+" > /etc/wireguard/wg${TUNNEL_INDEX}.cfg || exit 1
+echo -e ${GREEN}OK!${NC}
+
+if [ "$CONNECT_VPN" != true ]; then
+  echo -e "
+${GREEN}The WireGuard interface got created.${NC}
+
+To start it, run:
+
+--> ${GREEN}wg-quick up wg${TUNNEL_INDEX}${NC} <--
+
+If running on unRaid, you can also use the Dynamix WireGuard plugin to control the VPN tunnel.
+"
+
+  echo If you want to also enable port forwarding, you can start the script:
+  echo -e $ ${GREEN}PIA_TOKEN=$PIA_TOKEN \
+    PF_GATEWAY=$WG_SERVER_IP \
+    PF_HOSTNAME=$WG_HOSTNAME \
+    ./port_forwarding.sh${NC}
+  echo
+  echo The location used must be port forwarding enabled, or this will fail.
+  echo Calling the ./get_region script with PIA_PF=true will provide a filtered list.
+  exit 1
+fi
 
 # Start the WireGuard interface.
 # If something failed, stop this script.
@@ -149,7 +199,7 @@ echo -e ${GREEN}OK!${NC}
 # just hardcode /etc/resolv.conf to "nameserver 10.0.0.242".
 echo
 echo Trying to create the wireguard interface...
-wg-quick up pia || exit 1
+wg-quick up wg${TUNNEL_INDEX} || exit 1
 echo
 echo -e "${GREEN}The WireGuard interface got created.${NC}
 
@@ -157,7 +207,7 @@ At this point, internet should work via VPN.
 
 To disconnect the VPN, run:
 
---> ${GREEN}wg-quick down pia${NC} <--
+--> ${GREEN}wg-quick down wg${TUNNEL_INDEX}${NC} <--
 "
 
 # This section will stop the script if PIA_PF is not set to "true".

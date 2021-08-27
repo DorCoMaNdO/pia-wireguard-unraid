@@ -1,9 +1,20 @@
+# PIA WireGuard on unRaid
+
+### This is a fork of the original scripts at https://github.com/pia-foss/manual-connections.
+
+This fork has been modified to simplify the install process of the WireGuard VPN tunnels on an unRaid server with the Dynamix WireGuard plugin.
+OpenVPN scripts and configurations are removed in this fork.
+
+A [user script](unraid_userscript.sh) is provided for simplified setup with the User Scripts plugin.
+
+Alternatively manual setup is as explained in the next segment.
+
 # Manual PIA VPN Connections
 
-This repository contains documentation on how to create native WireGuard and OpenVPN connections, and also on how to enable Port Forwarding in case you require this feature. You will find a lot of information below. However if you prefer quick test, here is the __TL/DR__:
+This repository contains documentation on how to create native WireGuard connections, and also on how to enable Port Forwarding in case you require this feature. You will find a lot of information below. However if you prefer quick test, here is the __TL/DR__:
 
 ```
-git clone https://github.com/pia-foss/manual-connections.git
+git clone https://github.com/DorCoMaNdO/manual-connections.git
 cd manual-connections
 sudo ./run_setup.sh
 ```
@@ -27,8 +38,7 @@ The scripts were written so that they are easy to read and to modify. The code a
 In order for the scripts to work (probably even if you do a manual setup), you will need the following packages:
  * `curl`
  * `jq`
- * (only for WireGuard) `wg-quick` and `wireguard` kernel module
- * (only for OpenVPN) `openvpn`
+ * `wg-quick` and `wireguard` kernel module
 
 ## Disclaimers
 
@@ -81,7 +91,7 @@ In order to help you use VPN services and PF on any device, we have prepared a f
 
 The easiest way to trigger a fully automated connection is by running this oneliner:
 ```
-sudo VPN_PROTOCOL=wireguard DISABLE_IPV6="no" AUTOCONNECT=true PIA_PF=false PIA_USER=p0123456 PIA_PASS=xxxxxxxx ./run_setup.sh
+sudo DISABLE_IPV6="no" AUTOCONNECT=true PIA_PF=false PIA_USER=p0123456 PIA_PASS=xxxxxxxx ./run_setup.sh
 ```
 
 Here is a list of scripts you could find useful:
@@ -91,19 +101,19 @@ Here is a list of scripts you could find useful:
    * `PIA_DNS` - true/false
    * `PIA_PF` - true/false
    * `MAX_LATENCY` - numeric value, in seconds
-   * `AUTOCONNECT` - true/false; this will test for and select the server with the lowest latency, it will overried PREFERRED_REGION
+   * `AUTOCONNECT` - true/false; this will test for and select the server with the lowest latency, it will override PREFERRED_REGION
    * `PREFERRED_REGION` - the region ID for a PIA server
-   * `VPN_PROTOCOL` - wireguard or openvpn; openvpn will default to openvpn_udp_standard, but can also specify openvpn_tcp/udp_standad/strong
    * `DISABLE_IPV6` - yes/no
- * [Get region details](get_region.sh): This script will provide server details, validate `PREFERRED_REGION` input, and can determine the lowest latency location. The script can also trigger VPN connections, if you specify `VPN_PROTOCOL=wireguard` or `VPN_PROTOCOL=openvpn`; doing so requires a token. This script can reference `get_token.sh` with use of `PIA_USER` and `PIA_PASS`. If called without specifying `PREFERRED_REGION` this script writes a list of servers within lower than `MAX_LATENCY` to a `/opt/piavpn-manual/latencyList` for reference.
+   * `CONNECT_VPN` - true/false, true by default, affects whether the VPN tunnel will be started at the end of the script.
+   * `TUNNEL_INDEX` - the index (integer) of the VPN tunnel, auto-increments by default. Shuts down previous connection and overwrites previous connection when provided.
+ * [Get region details](get_region.sh): This script will provide server details, validate `PREFERRED_REGION` input, and can determine the lowest latency location. The script can also trigger VPN connections, if you specify `CONNECTION_READY=true`; doing so requires a token. This script can reference `get_token.sh` with use of `PIA_USER` and `PIA_PASS`. If called without specifying `PREFERRED_REGION` this script writes a list of servers within lower than `MAX_LATENCY` to a `/opt/piavpn-manual/latencyList` for reference.
  * [Get a token](get_token.sh): This script allows you to get an authentication token with a valid 'PIA_USER' and 'PIA_PASS'. It will write the token and its expiration date to `/opt/piavpn-manual/token` for reference.
- * [Connect to WireGuard](connect_to_wireguard_with_token.sh): This script allows you to connect to the VPN server via WireGuard.
- * [Connect to OpenVPN](connect_to_openvpn_with_token.sh): This script allows you to connect to the VPN server via OpenVPN.
+ * [Setup WireGuard](setup_with_token.sh): This script allows you to connect to the VPN server via WireGuard.
  * [Enable Port Forwarding](port_forwarding.sh): Enables you to add Port Forwarding to an existing VPN connection. Adding the environment variable `PIA_PF=true` to any of the previous scripts will also trigger this script.
 
 ## Manual PF Testing
 
-To use port forwarding on the NextGen network, first of all establish a connection with your favorite protocol. After this, you will need to find the private IP of the gateway you are connected to. In case you are WireGuard, the gateway will be part of the JSON response you get from the server, as you can see in the [bash script](https://github.com/pia-foss/manual-connections/blob/master/wireguard_and_pf.sh#L119). In case you are using OpenVPN, you can find the gateway by checking the routing table with `ip route s t all`.
+To use port forwarding on the NextGen network, first of all establish a connection with your favorite protocol. After this, you will need to find the private IP of the gateway you are connected to. In case you are WireGuard, the gateway will be part of the JSON response you get from the server, as you can see in the [bash script](https://github.com/pia-foss/manual-connections/blob/master/wireguard_and_pf.sh#L119).
 
 After connecting and finding out what the gateway is, get your payload and your signature by calling `getSignature` via HTTPS on port 19999. You will have to add your token as a GET var to prove you actually have an active account.
 

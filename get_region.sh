@@ -186,10 +186,6 @@ bestServer_meta_IP="$(echo $regionData | jq -r '.servers.meta[0].ip')"
 bestServer_meta_hostname="$(echo $regionData | jq -r '.servers.meta[0].cn')"
 bestServer_WG_IP="$(echo $regionData | jq -r '.servers.wg[0].ip')"
 bestServer_WG_hostname="$(echo $regionData | jq -r '.servers.wg[0].cn')"
-bestServer_OT_IP="$(echo $regionData | jq -r '.servers.ovpntcp[0].ip')"
-bestServer_OT_hostname="$(echo $regionData | jq -r '.servers.ovpntcp[0].cn')"
-bestServer_OU_IP="$(echo $regionData | jq -r '.servers.ovpnudp[0].ip')"
-bestServer_OU_hostname="$(echo $regionData | jq -r '.servers.ovpnudp[0].cn')"
 
 
 if [[ $VPN_PROTOCOL == "no" ]]; then
@@ -208,8 +204,6 @@ PIA authority. Please find below the list of best IPs and matching
 hostnames for each protocol:
 ${GREEN}Meta Services $bestServer_meta_IP\t-     $bestServer_meta_hostname
 WireGuard     $bestServer_WG_IP\t-     $bestServer_WG_hostname
-OpenVPN TCP   $bestServer_OT_IP\t-     $bestServer_OT_hostname
-OpenVPN UDP   $bestServer_OU_IP\t-     $bestServer_OU_hostname
 ${NC}"
 fi
 
@@ -232,42 +226,21 @@ else
 fi
 
 # Connect with WireGuard and clear authentication token file and latencyList
-if [[ $VPN_PROTOCOL == wireguard ]]; then
+if [ "$CONNECTION_READY" == true ]; then
+  if [[ -z "$CONNECT_VPN" ]]; then
+    CONNECT_VPN="true"
+  fi
+  export CONNECT_VPN
+
   echo The ./get_region.sh script got started with
-  echo -e ${GREEN}VPN_PROTOCOL=wireguard${NC}, so we will automatically connect to WireGuard,
+  echo -e ${GREEN}CONNECTION_READY=true${NC}, so we will automatically connect to WireGuard,
   echo by running this command:
   echo -e $ ${GREEN}PIA_TOKEN=$PIA_TOKEN \\
   echo WG_SERVER_IP=$bestServer_WG_IP WG_HOSTNAME=$bestServer_WG_hostname \\
-  echo -e PIA_PF=$PIA_PF ./connect_to_wireguard_with_token.sh${NC}
+  echo -e PIA_PF=$PIA_PF ./setup_wireguard_with_token.sh${NC}
   echo
   PIA_PF=$PIA_PF PIA_TOKEN=$PIA_TOKEN WG_SERVER_IP=$bestServer_WG_IP \
-    WG_HOSTNAME=$bestServer_WG_hostname ./connect_to_wireguard_with_token.sh
-  rm -f /opt/piavpn-manual/latencyList
-  exit 0
-fi
-
-# Connect with OpenVPN and clear authentication token file and latencyList
-if [[ $VPN_PROTOCOL == openvpn* ]]; then
-  serverIP=$bestServer_OU_IP
-  serverHostname=$bestServer_OU_hostname
-  if [[ $VPN_PROTOCOL == *tcp* ]]; then
-    serverIP=$bestServer_OT_IP
-    serverHostname=$bestServer_OT_hostname
-  fi
-  echo The ./get_region.sh script got started with
-  echo -e ${GREEN}VPN_PROTOCOL=$VPN_PROTOCOL${NC}, so we will automatically
-  echo connect to OpenVPN, by running this command:
-  echo -e $ ${GREEN}PIA_PF=$PIA_PF PIA_TOKEN=$PIA_TOKEN \\
-  echo   OVPN_SERVER_IP=$serverIP \\
-  echo   OVPN_HOSTNAME=$serverHostname \\
-  echo   CONNECTION_SETTINGS=$VPN_PROTOCOL \\
-  echo -e ./connect_to_openvpn_with_token.sh${NC}
-  echo
-  PIA_PF=$PIA_PF PIA_TOKEN=$PIA_TOKEN \
-    OVPN_SERVER_IP=$serverIP \
-    OVPN_HOSTNAME=$serverHostname \
-    CONNECTION_SETTINGS=$VPN_PROTOCOL \
-    ./connect_to_openvpn_with_token.sh
+    WG_HOSTNAME=$bestServer_WG_hostname ./setup_wireguard_with_token.sh
   rm -f /opt/piavpn-manual/latencyList
   exit 0
 fi

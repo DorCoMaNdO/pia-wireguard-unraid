@@ -316,49 +316,10 @@ For example, you can try 0.2 for 200ms allowed latency.
   fi
 done
 
-if [[ ! $VPN_PROTOCOL ]]; then
-  VPN_PROTOCOL="none"
-fi
-# This section asks for user connection preferences
-case $VPN_PROTOCOL in
-  openvpn)
-    VPN_PROTOCOL="openvpn_udp_standard"
-    ;;
-  wireguard | openvpn_udp_standard | openvpn_udp_strong | openvpn_tcp_standard | openvpn_tcp_strong)
-    ;;
-  none | *)
-    echo -n "Connection method ([W]ireguard/[o]penvpn): "
-    read connection_method
-    echo
-  
-    VPN_PROTOCOL="wireguard"
-    if echo ${connection_method:0:1} | grep -iq o; then
-      echo -n "Connection method ([U]dp/[t]cp): "
-      read protocolInput
-      echo
-
-      protocol="udp"
-      if echo ${protocolInput:0:1} | grep -iq t; then
-        protocol="tcp"
-      fi
-
-      echo "Higher levels of encryption trade performance for security. "
-      echo -n "Do you want to use strong encryption ([N]o/[y]es): "
-      read strongEncryption
-      echo
-
-      encryption="standard"
-      if echo ${strongEncryption:0:1} | grep -iq y; then
-        encryption="strong"
-      fi
-
-      VPN_PROTOCOL="openvpn_${protocol}_${encryption}"
-    fi
-    ;;
-esac
+VPN_PROTOCOL="wireguard"
 export VPN_PROTOCOL
-echo -e ${GREEN}VPN_PROTOCOL=$VPN_PROTOCOL"
-${NC}"
+#echo -e ${GREEN}VPN_PROTOCOL=$VPN_PROTOCOL"
+#${NC}"
 
 # Check for the required presence of resolvconf for setting DNS on wireguard connections
 setDNS="yes"
