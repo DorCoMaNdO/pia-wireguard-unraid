@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Script run location
-RUN_PATH="/mnt/user/appdata/PIA-WireGuard/"
+# Script configuration
+RUN_PATH="/mnt/user/appdata/PIA-WireGuard/" # run location
+RECLONE_GIT=true                            # redownload scripts
 
 # PIA account details
 PIA_USER="pXXXXXXX"
@@ -25,17 +26,22 @@ PIA_PF=false        # NOT RECOMMENDED, true/false, requests a port-forwarding co
 ###### USERSCRIPT ######
 
 # Create run directory
-if [ ! -d "$RUN_PATH" ] ; then
+if [ ! -d "$RUN_PATH" ]; then
   mkdir -vp "$RUN_PATH"
 fi
+cd $RUN_PATH
+
+SCRIPTS_PATH="$RUN_PATH/pia-scripts"
 
 # Clone scripts from github
-cd $RUN_PATH
-if [ -d "$RUN_PATH/pia-scripts" ] ; then
-  echo "Removing old scripts..."
-  rm -rd pia-scripts
+if [ "$RECLONE_GIT" == true ] || [ ! -d $SCRIPTS_PATH ]; then
+  if [ -d $SCRIPTS_PATH ]; then
+    echo "Removing old scripts..."
+    rm -rd pia-scripts
+  fi
+
+  git clone https://github.com/DorCoMaNdO/pia-wireguard-unraid.git pia-scripts
 fi
-git clone https://github.com/DorCoMaNdO/pia-wireguard-unraid.git pia-scripts
 
 cd pia-scripts
 
