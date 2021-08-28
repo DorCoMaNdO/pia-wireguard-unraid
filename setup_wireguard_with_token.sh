@@ -171,9 +171,9 @@ TYPE:1=\"7\"
 " > /etc/wireguard/wg${TUNNEL_INDEX}.cfg || exit 1
 echo -e ${GREEN}OK!${NC}
 
-if [ -d "/etc/wireguard/peers" ]; then
-  find /etc/wireguard/peers/ -name "peer-*-wg$TUNNEL_INDEX-*.*" | xargs rm
-fi
+#if [ -d "/etc/wireguard/peers" ]; then
+#  find /etc/wireguard/peers/ -name "peer-*-wg$TUNNEL_INDEX-*.*" | xargs rm
+#fi
 
 if [ "$CONNECT_VPN" != true ]; then
   echo -e "
